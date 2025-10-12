@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from './AppContext';
+import { useNavigate } from 'react-router-dom';
 
 const CheckoutPage = () => {
-  const { cart, getCartTotal, clearCart, setCurrentPage, user } = useAppContext();
+  const { cart, getCartTotal, clearCart, user } = useAppContext();
   const [formData, setFormData] = useState({
     email: user?.email || '',
     firstName: '',
@@ -16,23 +17,23 @@ const CheckoutPage = () => {
     expiryDate: '',
     cvv: ''
   });
+  const navigate = useNavigate();
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
     if (!user) {
       alert('Please sign in to access checkout');
-      setCurrentPage('signin');
+      navigate('/signin');
     }
-  }, [user, setCurrentPage]);
+  }, [user, navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!user) {
       alert('Please sign in to complete your order');
-      setCurrentPage('signin');
+      navigate('/signin');
       return;
     }
-    
     // Validate card details only if card payment is selected
     if (formData.paymentMethod === 'card') {
       if (!formData.cardNumber || !formData.expiryDate || !formData.cvv) {
@@ -40,12 +41,11 @@ const CheckoutPage = () => {
         return;
       }
     }
-    
     // Simulate payment processing
     const paymentMethodText = formData.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card Payment';
     alert(`Order placed successfully with ${paymentMethodText}! Thank you for your purchase.`);
     clearCart();
-    setCurrentPage('home');
+    navigate('/');
   };
 
   if (!user) {
@@ -55,7 +55,7 @@ const CheckoutPage = () => {
           <h2 className="text-2xl font-bold mb-4 text-gray-800">Sign In Required</h2>
           <p className="text-gray-600 mb-6">Please sign in to access checkout</p>
           <button
-            onClick={() => setCurrentPage('signin')}
+            onClick={() => navigate('/signin')}
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Sign In
@@ -71,7 +71,7 @@ const CheckoutPage = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">No Items to Checkout</h2>
           <button
-            onClick={() => setCurrentPage('home')}
+            onClick={() => navigate('/')}
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
           >
             Continue Shopping

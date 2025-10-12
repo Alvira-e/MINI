@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Search, ShoppingCart, User, BookOpen, Menu, Home } from 'lucide-react';
+import { Search, ShoppingCart, User, BookOpen, Home } from 'lucide-react';
 import { useAppContext } from './AppContext';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
-  const { user, getCartItemCount, setCurrentPage, searchQuery, setSearchQuery, logout } = useAppContext();
+  const { user, getCartItemCount, searchQuery, setSearchQuery, logout } = useAppContext();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -12,9 +13,9 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4">
             <BookOpen className="h-8 w-8" />
-            <h1 className="text-xl font-bold cursor-pointer" onClick={() => setCurrentPage('home')}>
+            <Link to="/" className="text-xl font-bold cursor-pointer">
               BookStore
-            </h1>
+            </Link>
           </div>
 
           {/* Search Bar */}
@@ -33,21 +34,21 @@ const Header = () => {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <button
-              onClick={() => setCurrentPage('home')}
+            <Link
+              to="/"
               className="flex items-center space-x-1 hover:text-orange-200"
             >
               <Home className="h-4 w-4" />
               <span>Home</span>
-            </button>
-            <button
-              onClick={() => setCurrentPage('categories')}
+            </Link>
+            <Link
+              to="/categories"
               className="hover:text-orange-200"
             >
               Categories
-            </button>
-            <button
-              onClick={() => setCurrentPage('cart')}
+            </Link>
+            <Link
+              to="/cart"
               className="flex items-center space-x-1 hover:text-orange-200 relative"
             >
               <ShoppingCart className="h-5 w-5" />
@@ -57,7 +58,7 @@ const Header = () => {
                   {getCartItemCount()}
                 </span>
               )}
-            </button>
+            </Link>
             {user ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
@@ -72,13 +73,13 @@ const Header = () => {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setCurrentPage('signin')}
+              <Link
+                to="/signin"
                 className="flex items-center space-x-1 hover:text-orange-200"
               >
                 <User className="h-4 w-4" />
                 <span>Sign In</span>
-              </button>
+              </Link>
             )}
           </nav>
         </div>

@@ -1,23 +1,57 @@
 import React, { useState } from 'react';
 import { useAppContext } from './AppContext';
+import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
-  const { login, setCurrentPage } = useAppContext();
+  const navigate = useNavigate();
+  const { login } = useAppContext();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
       return;
     }
     if (formData.name && formData.email && formData.password) {
-      login({ email: formData.email, name: formData.name });
+      setLoading(true);
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: formData.name,
+            email: formData.email,
+            password: formData.password
+          })
+        });
+        const contentType = res.headers.get('content-type');
+        if (!res.ok) {
+          let errMsg = 'Signup failed';
+          if (contentType && contentType.includes('application/json')) {
+            const err = await res.json();
+            errMsg = err.message || errMsg;
+          } else {
+            errMsg = await res.text();
+          }
+          throw new Error(errMsg);
+        }
+        alert('Signup successful! Please sign in.');
+        navigate('/signin');
+        // Optionally, auto-login or redirect to sign-in page
+        // login({ email: formData.email, name: formData.name });
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -77,19 +111,19 @@ const SignUpPage = () => {
           <button
             type="submit"
             className="w-full bg-blue-400 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={loading}
           >
-            Sign Up
+            {loading ? 'Signing Up...' : 'Sign Up'}
           </button>
         </form>
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <button
-              onClick={() => setCurrentPage('signin')}
+            <Link to='/signin'
               className="text-orange-600 hover:text-orange-500"
             >
               Sign In
-            </button>
+            </Link>
           </p>
         </div>
       </div>

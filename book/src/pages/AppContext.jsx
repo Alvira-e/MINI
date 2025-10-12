@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Remove Link, keep useNavigate
 
 // Sample book data 
 const sampleBooks = [
@@ -298,19 +299,20 @@ export const useAppContext = () => {
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState([]);
-  const [currentPage, setCurrentPage] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [books] = useState(sampleBooks);
 
+  const navigate = useNavigate(); // <-- Use this for navigation
+
   const login = (userData) => {
     setUser(userData);
-    setCurrentPage('home');
+    navigate('/'); // Redirect to home after login
   };
 
   const logout = () => {
     setUser(null);
-    setCurrentPage('home');
+    navigate('/'); // Redirect to home after logout
   };
 
   const addToCart = (book) => {
@@ -366,7 +368,6 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       user,
       cart,
-      currentPage,
       searchQuery,
       selectedCategory,
       books: filteredBooks,
@@ -379,7 +380,6 @@ export const AppProvider = ({ children }) => {
       clearCart,
       getCartTotal,
       getCartItemCount,
-      setCurrentPage,
       setSearchQuery,
       setSelectedCategory
     }}>
