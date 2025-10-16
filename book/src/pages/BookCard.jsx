@@ -5,6 +5,8 @@ import { useAppContext } from './AppContext';
 const BookCard = ({ book }) => {
   const { addToCart } = useAppContext();
 
+  const inStock = (book.stock || 0) > 0;
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-orange-100">
       <img
@@ -21,13 +23,19 @@ const BookCard = ({ book }) => {
           <span className="text-sm text-gray-600 ml-1">{book.rating}</span>
         </div>
         <p className="text-sm text-gray-700 mb-3 line-clamp-2">{book.description}</p>
-        <div className="flex items-center justify-between">
+
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm text-gray-500">Stock: <span className={inStock ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>{book.stock || 0}</span></span>
           <span className="text-xl font-bold text-orange-600">₹ {book.price}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
           <button
-            onClick={() => addToCart(book)}
-            className="bg-blue-400 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+            onClick={() => inStock && addToCart(book)}
+            disabled={!inStock}
+            className={`px-4 py-2 rounded transition-colors ${inStock ? 'bg-blue-400 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
           >
-            Add to Cart
+            {inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
         </div>
       </div>
