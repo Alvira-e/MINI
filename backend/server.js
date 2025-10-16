@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import authroute from "./routes/auth.route.js";
+import { verifytoken } from "./controllers/auth.controller.js";
 
 dotenv.config();
 
@@ -23,6 +24,9 @@ app.listen(3001, () => {
 });
 
 app.use("/api/auth", authroute);
+app.get("/api/auth/protected", verifytoken, (req, res) => {
+  res.send("This is protected route!");
+});
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

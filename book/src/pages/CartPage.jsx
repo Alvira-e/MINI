@@ -1,10 +1,11 @@
 import React from 'react';
 import { ShoppingCart, Plus, Minus, X } from 'lucide-react';
 import { useAppContext } from './AppContext';
+import { useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
-  const { cart, removeFromCart, updateQuantity, getCartTotal, setCurrentPage, user } = useAppContext();
-
+  const { cart, removeFromCart, updateQuantity, getCartTotal, user } = useAppContext();
+  const navigate = useNavigate();
   if (cart.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -13,7 +14,7 @@ const CartPage = () => {
           <h2 className="text-2xl font-bold mb-4 text-gray-800">Your Cart is Empty</h2>
           <p className="text-gray-600 mb-6">Add some books to get started!</p>
           <button
-            onClick={() => setCurrentPage('home')}
+            onClick={() => navigate('/')}
             className="bg-blue-400 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Continue Shopping
@@ -26,10 +27,10 @@ const CartPage = () => {
   const handleCheckout = () => {
     if (!user) {
       alert('Please sign in to proceed to checkout');
-      setCurrentPage('signin');
+      navigate('/signin');
       return;
     }
-    setCurrentPage('checkout');
+    navigate('/checkout');
   };
 
   return (
@@ -120,7 +121,7 @@ const CartPage = () => {
             </button>
             {!user && (
               <button
-                onClick={() => setCurrentPage('signin')}
+                onClick={() => navigate('/signin')}
                 className="w-full mt-2 bg-green-500 text-white py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
                 Sign In Now

@@ -1,17 +1,39 @@
 import React, { useState } from 'react';
 import { useAppContext } from './AppContext';
+import { Link } from 'react-router-dom';
 
 const SignInPage = () => {
-  const { login, setCurrentPage } = useAppContext();
+  const { login } = useAppContext();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.email && formData.password) {
-      login({ email: formData.email, name: formData.email.split('@')[0] });
+      setLoading(true);
+      try {
+        const res = await fetch('/api/auth/signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Sign in failed');
+        }
+        // Save token and user info
+        login({ email: formData.email, token: data.token });
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -47,19 +69,18 @@ const SignInPage = () => {
           <button
             type="submit"
             className="w-full bg-blue-400 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={loading}
           >
-            Sign In
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
-            <button
-              onClick={() => setCurrentPage('signup')}
-              className="text-orange-600 hover:text-orange-500"
+            <Link to="/signup" className='text-orange-600 hover:text-orange-500'
             >
               Sign Up
-            </button>
+            </Link>
           </p>
         </div>
       </div>
