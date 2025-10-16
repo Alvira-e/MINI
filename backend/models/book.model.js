@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const BookScheme  = new mongoose.schema({
+const bookSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true
@@ -24,9 +24,13 @@ const BookScheme  = new mongoose.schema({
     image: {
         type: String,
         required: true
+    },
+    stocks: {
+        type: Number,
+        required: true
     }
 });
 
-const Book = mongoose.model('Book', BookScheme);
+const Book = mongoose.model('Book', bookSchema);
 
 export default Book;
