@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import authroute from "./routes/auth.route.js";
 import bookroute from "./routes/book.route.js";
 import { verifytoken } from "./controllers/auth.controller.js";
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -16,9 +18,15 @@ mongoose
     console.log(err);
   });
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 app.use(express.json());
+
+// serve uploaded images (use absolute path relative to backend folder)
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.listen(3001, () => {
   console.log("Server connected to 3001!!");

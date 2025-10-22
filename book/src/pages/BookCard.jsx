@@ -8,7 +8,7 @@ const BookCard = ({ book }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-orange-100">
       <img
-        src={book.image}
+        src={`http://localhost:3001/${book.image}`}
         alt={book.title}
         className="w-full h-64 object-cover"
       />

@@ -1,8 +1,8 @@
 import Book from '../models/book.model.js';
 
 export const addbook = async (req, res, next) => {
-    const { title, author, description, price, category, stocks } = req.body;
-    const image = req.file ? req.file.path : null;
+    const { title, author, description, price, category, rating, stocks } = req.body;
+    const image = req.file ? `uploads/${req.file.filename}` : null;
 
     try {
         const newBook = new Book({
@@ -11,6 +11,7 @@ export const addbook = async (req, res, next) => {
             description,
             price,
             category,
+            rating,
             image,
             stocks
         });
