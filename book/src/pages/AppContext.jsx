@@ -17,7 +17,7 @@ export const AppProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState([]); // <-- now writable to update stock
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -50,10 +50,23 @@ export const AppProvider = ({ children }) => {
     navigate('/'); // Redirect to home after logout
   };
 
+  const updateBookStock = (bookId, delta) => {
+    setBooks(prev => prev.map(b =>
+      b.id === bookId ? { ...b, stocks: Math.max(0, (b.stocks || 0) + delta) } : b
+    ));
+  };
+
   const addToCart = (book) => {
+    const storeBook = books.find(b => b.id === book.id);
+    if (!storeBook || (storeBook.stocks || 0) <= 0) {
+      // no stock available
+      return;
+    }
+    updateBookStock(book.id, -1);
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === book.id);
-      if (existingItem) {
+      if (existingItem) { // This check is redundant here because it's already done above.
+        if ((storeBook.stocks || 0) <= 0) return prevCart; // This check is also redundant.
         return prevCart.map(item =>
           item.id === book.id ? { ...item, quantity: item.quantity + 1 } : item
         );
@@ -63,7 +76,14 @@ export const AppProvider = ({ children }) => {
   };
 
   const removeFromCart = (bookId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== bookId));
+    setCart(prevCart => {
+      const item = prevCart.find(i => i.id === bookId);
+      if (item) {
+        // restore stock
+        updateBookStock(bookId, item.quantity);
+      }
+      return prevCart.filter(item => item.id !== bookId);
+    });
   };
 
   const updateQuantity = (bookId, quantity) => {
@@ -71,15 +91,44 @@ export const AppProvider = ({ children }) => {
       removeFromCart(bookId);
       return;
     }
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.id === bookId ? { ...item, quantity } : item
-      )
-    );
+    setCart(prevCart => {
+      const item = prevCart.find(i => i.id === bookId);
+      if (!item) return prevCart;
+
+      const diff = quantity - item.quantity;
+      if (diff > 0) {
+        const storeBook = books.find(b => b.id === bookId);
+        const available = storeBook ? (storeBook.stocks || 0) : 0;
+        const toAdd = Math.min(diff, available);
+        if (toAdd <= 0) return prevCart;
+        updateBookStock(bookId, -toAdd);
+        return prevCart.map(i => i.id === bookId ? { ...i, quantity: i.quantity + toAdd } : i);
+      } else if (diff < 0) {
+        // returning stock
+        updateBookStock(bookId, -diff); // -diff is positive
+        return prevCart.map(i => i.id === bookId ? { ...i, quantity } : i);
+      }
+      return prevCart;
+    });
   };
 
   const clearCart = () => {
+    cart.forEach(item => updateBookStock(item.id, item.quantity));
     setCart([]);
+  };
+
+  const addBook = (newBook) => {
+    setBooks(prev => [
+      ...prev,
+      {
+        ...newBook,
+        id: prev.length > 0 ? Math.max(...prev.map(b => b.id)) + 1 : 1, // Generate a new ID
+      }
+    ]);
+  };
+
+  const deleteBook = (bookId) => {
+    setBooks(prev => prev.filter(b => b.id !== bookId));
   };
 
   const getCartTotal = () => {
@@ -116,7 +165,12 @@ export const AppProvider = ({ children }) => {
       getCartTotal,
       getCartItemCount,
       setSearchQuery,
-      setSelectedCategory
+      setSelectedCategory,
+      // expose stock updater if needed by admin UI
+      addBook,
+      deleteBook,
+      updateBookStock,
+      rawBooks: books
     }}>
       {children}
     </AppContext.Provider>
