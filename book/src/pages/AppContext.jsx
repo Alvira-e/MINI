@@ -10,8 +10,8 @@ export const useAppContext = () => {
   }
   return context;
 };
-
-// App Provider Component
+ 
+// App Provider 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState([]);
