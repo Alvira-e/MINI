@@ -40,9 +40,27 @@ export const removebook = async (req, res, next) => {
         if (!deletedBook) {
             return res.status(404).json({ message: 'Book not found' });
         }
-        res.status(200).json({ message: 'Book deleted}) successfully', book: deletedBook });
+        // fixed malformed response
+        res.status(200).json({ message: 'Book deleted successfully', book: deletedBook });
     } catch (error) {
         next(error);
     }
+};
 
-}
+export const adjustStock = async (req, res, next) => {
+  const { id } = req.params;
+  const delta = Number(req.body.delta || 0);
+  try {
+    const book = await Book.findById(id);
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+
+    // compute new stock and clamp to 0+
+    book.stocks = Math.max(0, (Number(book.stocks) || 0) + delta);
+
+    await book.save();
+
+    return res.status(200).json({ message: 'Stock updated', book });
+  } catch (error) {
+    next(error);
+  }
+};

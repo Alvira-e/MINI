@@ -50,10 +50,46 @@ export const AppProvider = ({ children }) => {
     navigate('/'); // Redirect to home after logout
   };
 
-  const updateBookStock = (bookId, delta) => {
-    setBooks(prev => prev.map(b =>
-      b.id === bookId ? { ...b, stocks: Math.max(0, (b.stocks || 0) + delta) } : b
-    ));
+  const updateBookStock = async (bookId, delta) => {
+    // Optimistic update: capture previous state for rollback
+    let previousStocks;
+    setBooks(prev => {
+      return prev.map(b => {
+        if (b.id === bookId) {
+          previousStocks = (b.stocks || 0);
+          return { ...b, stocks: Math.max(0, previousStocks + delta) };
+        }
+        return b;
+      });
+    });
+
+    try {
+      const response = await fetch(`/api/book/stocks/${bookId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        // if backend gives a message, prefer it
+        const msg = data?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(msg);
+      }
+
+      // if server returned updated book, sync it (normalize id)
+      if (data && data.book) {
+        const updatedBook = { ...data.book, id: data.book._id || data.book.id };
+        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, ...updatedBook } : b));
+      }
+
+    } catch (error) {
+      console.error("Could not update book stock:", error);
+      // rollback to previousStocks
+      setBooks(prev => prev.map(b => b.id === bookId ? { ...b, stocks: Math.max(0, previousStocks ?? (b.stocks || 0)) } : b));
+      throw error; // re-throw so callers can show errors
+    }
   };
 
   const addToCart = (book) => {
@@ -117,18 +153,36 @@ export const AppProvider = ({ children }) => {
     setCart([]);
   };
 
-  const addBook = (newBook) => {
-    setBooks(prev => [
-      ...prev,
-      {
-        ...newBook,
-        id: prev.length > 0 ? Math.max(...prev.map(b => b.id)) + 1 : 1, // Generate a new ID
+  const addBook = async (bookFormData) => {
+    try {
+      const response = await fetch('/api/book/addbook', {
+        method: 'POST',
+        body: bookFormData,
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    ]);
+      const { book: newBook } = await response.json();
+      // normalize id and add to state
+      setBooks(prev => [...prev, { ...newBook, id: newBook._id }]);
+      return newBook;
+    } catch (error) {
+      console.error("Could not add book:", error);
+      throw error; // re-throw to be caught in the component
+    }
   };
 
-  const deleteBook = (bookId) => {
-    setBooks(prev => prev.filter(b => b.id !== bookId));
+  const deleteBook = async (bookId) => {
+    try {
+      const response = await fetch(`/api/book/${bookId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      setBooks(prev => prev.filter(b => b.id !== bookId));
+    } catch (error) {
+      console.error("Could not delete book:", error);
+      throw error;
+    }
   };
 
   const getCartTotal = () => {

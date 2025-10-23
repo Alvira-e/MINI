@@ -27,8 +27,9 @@ const SignInPage = () => {
         if (!res.ok) {
           throw new Error(data.message || 'Sign in failed');
         }
-        // Save token and user info
-        login({ email: formData.email, token: data.token });
+        // Save the full user object from the backend response
+        login(data.user);
+        localStorage.setItem('token', data.token);
       } catch (err) {
         alert(err.message);
       } finally {
