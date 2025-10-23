@@ -14,6 +14,8 @@ import SignInPage from "./pages/SigninPage";
 import SignUpPage from "./pages/SignUpPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import BookAdminPanel from "./pages/AdminPanel";
+
 
 function App() {
   return (
@@ -27,6 +29,7 @@ function App() {
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/signin" element={<SignInPage />} />
               <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/admin" element={<BookAdminPanel />} />
               <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="*" element={<Navigate to="/" />} />
