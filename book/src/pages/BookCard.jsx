@@ -4,13 +4,13 @@ import { useAppContext } from './AppContext';
 
 const BookCard = ({ book }) => {
   const { addToCart } = useAppContext();
+    const inStock = (book.stocks || 0) > 0;
 
-  const inStock = (book.stock || 0) > 0;
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-orange-100">
       <img
-        src={book.image}
+        src={`http://localhost:3001/${book.image}`}
         alt={book.title}
         className="w-full h-64 object-cover"
       />
@@ -23,13 +23,11 @@ const BookCard = ({ book }) => {
           <span className="text-sm text-gray-600 ml-1">{book.rating}</span>
         </div>
         <p className="text-sm text-gray-700 mb-3 line-clamp-2">{book.description}</p>
-
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-gray-500">Stock: <span className={inStock ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>{book.stock || 0}</span></span>
-          <span className="text-xl font-bold text-orange-600">₹ {book.price}</span>
+          <span className="text-sm text-gray-500">Stock: <span className={inStock ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>{book.stocks || 0}</span></span>
         </div>
-
         <div className="flex items-center justify-between">
+          <span className="text-xl font-bold text-orange-600">₹ {book.price}</span>
           <button
             onClick={() => inStock && addToCart(book)}
             disabled={!inStock}

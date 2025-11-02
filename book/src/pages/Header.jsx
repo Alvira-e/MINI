@@ -1,88 +1,76 @@
-import React, { useState } from 'react';
-import { Search, ShoppingCart, User, BookOpen, Home } from 'lucide-react';
+import React from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { BookOpen, ShoppingCart, User, LogIn, LogOut, Search, ShieldCheck } from 'lucide-react';
 import { useAppContext } from './AppContext';
-import { Link } from 'react-router-dom';
 
 const Header = () => {
-  const { user, getCartItemCount, searchQuery, setSearchQuery, logout } = useAppContext();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout, getCartItemCount, searchQuery, setSearchQuery } = useAppContext();
+  const cartItemCount = getCartItemCount();
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
   return (
-    <header className="bg-blue-400 text-black shadow-lg">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            <BookOpen className="h-8 w-8" />
-            <Link to="/" className="text-xl font-bold cursor-pointer">
-              BookStore
-            </Link>
-          </div>
+    <header className="bg-blue-900 text-white shadow-md sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-2">
+          <BookOpen className="text-orange-400" size={28} />
+          <span className="text-2xl font-bold">BookStore</span>
+        </Link>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search books..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-300"
-              />
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link
-              to="/"
-              className="flex items-center space-x-1 hover:text-orange-200"
-            >
-              <Home className="h-4 w-4" />
-              <span>Home</span>
-            </Link>
-            <Link
-              to="/categories"
-              className="hover:text-orange-200"
-            >
-              Categories
-            </Link>
-            <Link
-              to="/cart"
-              className="flex items-center space-x-1 hover:text-orange-200 relative"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              <span>Cart</span>
-              {getCartItemCount() > 0 && (
-                <span className="absolute -top-2 -right-2 bg-blue-700 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getCartItemCount()}
-                </span>
-              )}
-            </Link>
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5" />
-                  <span>{user.email}</span>
-                </div>
-                <button
-                  onClick={logout}
-                  className="text-sm hover:text-orange-200"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/signin"
-                className="flex items-center space-x-1 hover:text-orange-200"
-              >
-                <User className="h-4 w-4" />
-                <span>Sign In</span>
-              </Link>
-            )}
-          </nav>
+        <div className="hidden md:flex items-center bg-white rounded-md w-1/3">
+          <input
+            type="text"
+            placeholder="Search by title or author..."
+            value={searchQuery}
+            onChange={handleSearch}
+            className="w-full px-4 py-2 text-gray-800 rounded-l-md focus:outline-none"
+          />
+          <Search className="text-gray-500 mx-2" size={20} />
         </div>
+
+        <nav className="flex items-center gap-4">
+          <NavLink to="/" className={({ isActive }) => `hover:text-orange-400 transition-colors ${isActive ? 'text-orange-400' : ''}`}>
+            Home
+          </NavLink>
+          <NavLink to="/categories" className={({ isActive }) => `hover:text-orange-400 transition-colors ${isActive ? 'text-orange-400' : ''}`}>
+            Categories
+          </NavLink>
+
+          {/* Conditionally render Admin link */}
+          {user && user.role === 'admin' && (
+            <NavLink to="/admin" className={({ isActive }) => `flex items-center gap-1 hover:text-orange-400 transition-colors ${isActive ? 'text-orange-400' : ''}`}>
+              <ShieldCheck size={18} />
+              Admin
+            </NavLink>
+          )}
+
+          <Link to="/cart" className="relative hover:text-orange-400 transition-colors">
+            <ShoppingCart size={24} />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {cartItemCount}
+              </span>
+            )}
+          </Link>
+
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-2">
+                <User size={20} /> {user.username}
+              </span>
+              <button onClick={logout} className="flex items-center gap-1 hover:text-orange-400 transition-colors">
+                <LogOut size={20} />
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link to="/signin" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
+              <LogIn size={20} /> Sign In
+            </Link>
+          )}
+        </nav>
       </div>
     </header>
   );
