@@ -3,7 +3,7 @@ import { useAppContext } from './AppContext';
 import { useNavigate } from 'react-router-dom';
 
 const CheckoutPage = () => {
-  const { cart, getCartTotal, clearCart, user } = useAppContext();
+  const { cart, getCartTotal, clearCart, user, reloadBooks } = useAppContext();
   const [formData, setFormData] = useState({
     email: user?.email || '',
     firstName: '',
@@ -27,25 +27,75 @@ const CheckoutPage = () => {
     }
   }, [user, navigate]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
       alert('Please sign in to complete your order');
       navigate('/signin');
       return;
     }
-    // Validate card details only if card payment is selected
     if (formData.paymentMethod === 'card') {
       if (!formData.cardNumber || !formData.expiryDate || !formData.cvv) {
         alert('Please fill in all card details');
         return;
       }
     }
-    // Simulate payment processing
-    const paymentMethodText = formData.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card Payment';
-    alert(`Order placed successfully with ${paymentMethodText}! Thank you for your purchase.`);
-    clearCart();
-    navigate('/');
+
+    const items = cart.map(item => ({
+      id: item.id,
+      title: item.title,
+      price: Number(item.price || 0),
+      quantity: Number(item.quantity || 0)
+    }));
+
+    const total = Number((getCartTotal() * 1.08).toFixed(2));
+
+    const payload = {
+      customer: {
+        name: `${formData.firstName} ${formData.lastName}`.trim() || user.username || '',
+        email: formData.email || user.email || '',
+        address: formData.address || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        zipCode: formData.zipCode || ''
+      },
+      items,
+      paymentMethod: formData.paymentMethod,
+      total
+    };
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload),
+      });
+
+      // handle non-JSON responses safely
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await res.json() : { message: await res.text() };
+
+      if (!res.ok) {
+        throw new Error(data.message || `Checkout failed: ${res.status}`);
+      }
+
+      alert('Order placed successfully! Thank you for your purchase.');
+
+      // backend already decremented stocks atomically; refresh books from server
+      await reloadBooks();
+
+      // clear cart without restoring stocks
+      clearCart(false);
+
+      navigate('/');
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      alert(`Error: ${error.message}`);
+    }
   };
 
   if (!user) {

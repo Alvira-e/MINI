@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
 import { useAppContext } from './AppContext';
 
 export default function BookAdminPanel() {
-  const { rawBooks: books, addBook, deleteBook, updateBookStock, categories: bookCategories } = useAppContext();
+  const { rawBooks: books, addBook, deleteBook,updateBook, updateBookStock, categories: bookCategories } = useAppContext();
 
   const [showModal, setShowModal] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
@@ -71,51 +71,60 @@ export default function BookAdminPanel() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || (!photoFile && !editingBook) || !formData.description || !formData.author || !formData.category || !formData.rating || formData.stock === '' || !formData.price) {
-      alert('Please fill all fields');
-      return;
-    }
-    
-    const bookFormData = new FormData();
-    bookFormData.append('title', formData.title);
-    bookFormData.append('description', formData.description);
-    bookFormData.append('author', formData.author);
-    bookFormData.append('category', formData.category);
-    bookFormData.append('rating', formData.rating);
-    bookFormData.append('stocks', formData.stock);
-    bookFormData.append('price', formData.price);
-    if (photoFile) {
-      bookFormData.append('image', photoFile);
+  if (
+    !formData.title ||
+    (!photoFile && !editingBook) ||
+    !formData.description ||
+    !formData.author ||
+    !formData.category ||
+    !formData.rating ||
+    formData.stock === '' ||
+    !formData.price
+  ) {
+    alert('Please fill all fields');
+    return;
+  }
+
+  const bookFormData = new FormData();
+  bookFormData.append('title', formData.title);
+  bookFormData.append('description', formData.description);
+  bookFormData.append('author', formData.author);
+  bookFormData.append('category', formData.category);
+  bookFormData.append('rating', formData.rating);
+  bookFormData.append('stocks', formData.stock);
+  bookFormData.append('price', formData.price);
+  if (photoFile) {
+    bookFormData.append('image', photoFile);
+  }
+
+  try {
+    if (editingBook) {
+      // call update endpoint
+      await updateBook(editingBook.id, bookFormData);
+    } else {
+      await addBook(bookFormData);
     }
 
-    try {
-      // If editing: remove old record first (simple approach) then add new
-      if (editingBook) {
-        // delete old book on backend
-        await deleteBook(editingBook.id);
-      }
-      // add (or re-add) book on backend; addBook should update context's books
-      await addBook(bookFormData);
-      setShowModal(false);
-      // reset form
-      setEditingBook(null);
-      setFormData({
-        title: '',
-        photo: '',
-        description: '',
-        rating: '',
-        stock: '',
-        price: '',
-        author: '',
-        category: ''
-      });
-      setPhotoFile(null);
-      setPhotoPreview(null);
-    } catch (err) {
-      console.error('Error adding/updating book:', err);
-      alert(err.message || 'Could not add/update book');
-    }
-  };
+    setShowModal(false);
+    setEditingBook(null);
+    setFormData({
+      title: '',
+      photo: '',
+      description: '',
+      rating: '',
+      stock: '',
+      price: '',
+      author: '',
+      category: ''
+    });
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  } catch (err) {
+    console.error('Error adding/updating book:', err);
+    alert(err.message || 'Could not add/update book');
+  }
+};
+
 
   const handleDeleteBook = async (id) => {
     if (window.confirm('Are you sure you want to delete this book?')) {
