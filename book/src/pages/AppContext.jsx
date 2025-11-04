@@ -22,14 +22,19 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        // change endpoint to match backend route and map _id -> id
         const response = await fetch('/api/book/getbooks');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        // normalize ids to `id` so front-end code works consistently
-        setBooks(data.map(b => ({ ...b, id: b._id || b.id })));
+        const API_ORIGIN = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+        const normalized = data.map(b => ({
+          ...b,
+          id: b._id || b.id,
+          image: b.image ? (b.image.startsWith('http') ? b.image : `${API_ORIGIN}/${b.image.replace(/^\/+/, '')}`) : null,
+          stocks: Number(b.stocks || 0)
+        }));
+        setBooks(normalized);
       } catch (error) {
         console.error("Could not fetch books:", error);
       }
@@ -148,8 +153,30 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  const clearCart = () => {
-    cart.forEach(item => updateBookStock(item.id, item.quantity));
+  // expose a reload function so pages (checkout) can refresh book data after backend changes
+  const reloadBooks = async () => {
+    try {
+      const response = await fetch('/api/book/getbooks');
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      const API_ORIGIN = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const normalized = data.map(b => ({
+        ...b,
+        id: b._id || b.id,
+        image: b.image ? (b.image.startsWith('http') ? b.image : `${API_ORIGIN}/${b.image.replace(/^\/+/, '')}`) : null,
+        stocks: Number(b.stocks || 0)
+      }));
+      setBooks(normalized);
+    } catch (err) {
+      console.error('reloadBooks failed:', err);
+    }
+  };
+
+  // clearCart: if restoreStocks === true, return items to stock; when called after successful checkout use false
+  const clearCart = (restoreStocks = true) => {
+    if (restoreStocks) {
+      cart.forEach(item => updateBookStock(item.id, item.quantity));
+    }
     setCart([]);
   };
 
@@ -184,6 +211,32 @@ export const AppProvider = ({ children }) => {
       throw error;
     }
   };
+
+  const updateBook = async (bookId, bookFormData) => {
+  try {
+    const response = await fetch(`/api/book/${bookId}`, {
+      method: 'PUT',
+      body: bookFormData, // Send FormData directly
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const { book: updatedBook } = await response.json();
+    const normalized = { ...updatedBook, id: updatedBook._id || updatedBook.id };
+
+    setBooks(prev =>
+      prev.map(b => (b.id === bookId ? { ...b, ...normalized } : b))
+    );
+
+    return normalized;
+  } catch (error) {
+    console.error('Could not update book:', error);
+    throw error;
+  }
+};
+
 
   const getCartTotal = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -220,11 +273,12 @@ export const AppProvider = ({ children }) => {
       getCartItemCount,
       setSearchQuery,
       setSelectedCategory,
-      // expose stock updater if needed by admin UI
       addBook,
       deleteBook,
+      updateBook,
       updateBookStock,
-      rawBooks: books
+      rawBooks: books,
+      reloadBooks  // <-- exported
     }}>
       {children}
     </AppContext.Provider>
