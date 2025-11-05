@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, X, Check, Book, ShoppingCart } from 'lucide-react';
 import { useAppContext } from './AppContext';
 
 export default function BookAdminPanel() {
-  const { rawBooks: books, addBook, deleteBook,updateBook, updateBookStock, categories: bookCategories } = useAppContext();
+  const { rawBooks: books, addBook, deleteBook, updateBook, updateBookStock, categories: bookCategories } = useAppContext();
 
+  const [activeTab, setActiveTab] = useState('books');
   const [showModal, setShowModal] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,6 +21,8 @@ export default function BookAdminPanel() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null); // For the actual file object
   const [stockInputs, setStockInputs] = useState({}); // Local state for stock inputs
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -156,89 +159,185 @@ export default function BookAdminPanel() {
     }
   };
 
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      const fetchOrders = async () => {
+        setOrdersLoading(true);
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch('/api/checkout/getorders', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (!res.ok) {
+            throw new Error('Failed to fetch orders');
+          }
+          const data = await res.json();
+          setOrders(data);
+        } catch (err) {
+          console.error(err);
+          alert(err.message);
+        } finally {
+          setOrdersLoading(false);
+        }
+      };
+      fetchOrders();
+    }
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Book Admin Panel</h1>
-          <button
-            onClick={openAddModal}
-            className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-blue-700"
-          >
-            <Plus size={20} />
-            Add Book
-          </button>
+          {activeTab === 'books' && (
+            <button
+              onClick={openAddModal}
+              className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-blue-700"
+            >
+              <Plus size={20} />
+              Add Book
+            </button>
+          )}
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Photo</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Author</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Category</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Rating</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Price</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Stock</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {books.map(book => (
-                <tr key={book.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <img src={book.image} alt={book.title} className="w-12 h-16 object-cover rounded" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{book.title}</div>
-                    <div className="text-sm text-gray-500 truncate max-w-xs">{book.description}</div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">{book.author}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">{book.category}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">{(book.rating ?? 0).toFixed(1)} ⭐</td>
-                  <td className="px-4 py-3 text-gray-700">₹{(book.price ?? 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="number"
-                      value={stockInputs[book.id] ?? book.stocks ?? 0}
-                      onChange={(e) => handleStockInputChange(book.id, e.target.value)}
-                      className="w-20 px-2 py-1 border rounded"
-                      min="0"
-                    />
-                    {stockInputs[book.id] !== undefined && (
-                      <button
-                        onClick={() => handleUpdateStock(book.id)}
-                        className="p-1 ml-1 text-green-600 hover:bg-green-100 rounded"
-                        title="Save stock"
-                      >
-                        <Check size={18} />
-                      </button>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEditModal(book)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBook(book.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mb-4 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('books')}
+              className={`${activeTab === 'books' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                          whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+            >
+              <Book size={16} /> Books
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`${activeTab === 'orders' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                          whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+            >
+              <ShoppingCart size={16} /> Orders
+            </button>
+          </nav>
         </div>
+
+        {activeTab === 'books' && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Photo</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Author</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Category</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Rating</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Price</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Stock</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {books.map(book => (
+                  <tr key={book.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <img src={book.image} alt={book.title} className="w-12 h-16 object-cover rounded" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{book.title}</div>
+                      <div className="text-sm text-gray-500 truncate max-w-xs">{book.description}</div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">{book.author}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">{book.category}</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">{(book.rating ?? 0).toFixed(1)} ⭐</td>
+                    <td className="px-4 py-3 text-gray-700">₹{(book.price ?? 0).toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={stockInputs[book.id] ?? book.stocks ?? 0}
+                        onChange={(e) => handleStockInputChange(book.id, e.target.value)}
+                        className="w-20 px-2 py-1 border rounded"
+                        min="0"
+                      />
+                      {stockInputs[book.id] !== undefined && (
+                        <button
+                          onClick={() => handleUpdateStock(book.id)}
+                          className="p-1 ml-1 text-green-600 hover:bg-green-100 rounded"
+                          title="Save stock"
+                        >
+                          <Check size={18} />
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEditModal(book)}
+                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBook(book.id)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <div className="bg-white rounded-lg shadow overflow-x-auto">
+            {ordersLoading ? (
+              <div className="p-6 text-center">Loading orders...</div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Order ID</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Customer</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Items</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Payment</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map(order => (
+                    <tr key={order._id} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-500">...{order._id.slice(-6)}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">{order.customer.name}</div>
+                        <div className="text-sm text-gray-500">{order.customer.email}</div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        <ul>
+                          {order.items.map(item => (
+                            <li key={item.id}>{item.title} (x{item.quantity})</li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td className="px-4 py-3 font-medium">₹{order.total.toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 text-xs rounded ${order.paymentMethod === 'cod' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                          {order.paymentMethod.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
 
       {showModal && (
