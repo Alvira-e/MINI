@@ -16,6 +16,30 @@ const SignUpPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Username validation: cannot be only numbers
+    if (/^\d+$/.test(formData.name)) {
+      alert('Username cannot consist only of numbers.');
+      return;
+    }
+
+    // Password validation
+    const passwordErrors = [];
+    if (formData.password.length < 8) {
+      passwordErrors.push('be at least 8 characters long');
+    }
+    if (!/[A-Z]/.test(formData.password)) {
+      passwordErrors.push('contain at least one uppercase letter');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+      passwordErrors.push('contain at least one special character');
+    }
+
+    if (passwordErrors.length > 0) {
+      alert(`Password must:\n- ${passwordErrors.join('\n- ')}`);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
       return;
@@ -68,6 +92,7 @@ const SignUpPage = () => {
               type="text"
               required
               value={formData.name}
+              autoComplete="name"
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
@@ -80,6 +105,7 @@ const SignUpPage = () => {
               type="email"
               required
               value={formData.email}
+              autoComplete="email"
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
@@ -92,6 +118,7 @@ const SignUpPage = () => {
               type="password"
               required
               value={formData.password}
+              autoComplete="new-password"
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
@@ -104,6 +131,7 @@ const SignUpPage = () => {
               type="password"
               required
               value={formData.confirmPassword}
+              autoComplete="new-password"
               onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
             />

@@ -80,3 +80,12 @@ export const createOrder = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getOrders = async (req, res, next) => {
+  try{
+    const orders = await Order.find().sort({ createdAt: -1 });
+    res.status(200).json(orders);
+  } catch (error) {
+    next(error);
+  }
+}
