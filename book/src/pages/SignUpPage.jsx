@@ -69,8 +69,6 @@ const SignUpPage = () => {
         }
         alert('Signup successful! Please sign in.');
         navigate('/signin');
-        // Optionally, auto-login or redirect to sign-in page
-        // login({ email: formData.email, name: formData.name });
       } catch (err) {
         alert(err.message);
       } finally {

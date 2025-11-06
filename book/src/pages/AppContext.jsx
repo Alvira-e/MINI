@@ -13,8 +13,8 @@ export const useAppContext = () => {
  
 // App Provider 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [cart, setCart] = useState([]);
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')) || null);
+  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('cart')) || []);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [books, setBooks] = useState([]); // <-- now writable to update stock
@@ -43,14 +43,21 @@ export const AppProvider = ({ children }) => {
     fetchBooks();
   }, []); // The empty dependency array ensures this effect runs only once on mount
 
+  // Persist cart to localStorage
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
+
   const navigate = useNavigate(); // <-- Use this for navigation
 
   const login = (userData) => {
+    localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     navigate('/'); // Redirect to home after login
   };
 
   const logout = () => {
+    localStorage.removeItem('user');
     setUser(null);
     navigate('/'); // Redirect to home after logout
   };
